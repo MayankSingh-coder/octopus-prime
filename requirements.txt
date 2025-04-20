@@ -2,12 +2,19 @@
 numpy>=1.19.0
 matplotlib>=3.3.0
 scikit-learn>=0.23.0
+tk>=8.6.0  # For UI applications
+
+# Web application dependencies (for API/web interfaces)
 Flask>=2.0.0
 Flask-Cors>=3.0.0
 
-# Optional dependencies for enhanced embeddings
+# Optional dependencies for enhanced embeddings and features
 # These can be installed separately if needed
-# gensim>=4.0.0
-# transformers>=4.0.0
-# torch>=1.0.0
-# tokenizers>=0.10.0
+# gensim>=4.0.0        # For Word2Vec, GloVe, and FastText embeddings
+# transformers>=4.0.0  # For BERT and RoBERTa embeddings
+# torch>=1.0.0         # For transformer-based models
+# tokenizers>=0.10.0   # For advanced tokenization
+
+# To install all dependencies including optional ones:
+# pip install -r requirements.txt
+# pip install gensim transformers torch tokenizers
