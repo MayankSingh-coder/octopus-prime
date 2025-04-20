@@ -34,6 +34,40 @@ python basic_mlp_ui.py
 python run_standard_mlp.py
 ```
 
+## UI Screenshots
+
+### Model Training
+
+The training interface shows real-time visualization of training and validation loss:
+
+![Model Training](screenshots/model_training.png)
+
+*Screenshot shows the training process with decreasing loss values, indicating the model is learning effectively.*
+
+### Next Word Prediction
+
+The prediction interface allows you to enter a context and see the most likely next words:
+
+![Next Word Prediction](screenshots/word_prediction.png)
+
+*Screenshot shows prediction results for a sample context, with probabilities for each predicted word.*
+
+### Text Generation
+
+The text generation interface lets you generate coherent text from a starting context:
+
+![Text Generation](screenshots/text_generation.png)
+
+*Screenshot shows generated text continuing from a user-provided context.*
+
+### Model Architecture
+
+The model architecture tab provides visualization of the neural network structure:
+
+![Model Architecture](screenshots/model_architecture.png)
+
+*Screenshot shows the neural network layers and connections.*
+
 ## Project Structure
 
 ```
