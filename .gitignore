@@ -1,0 +1,51 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+mlp_env/
+.env
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Model files and outputs
+model_output/
+*.pkl
+*.h5
+*.model
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Data files
+data/
+*.csv
+*.txt
+!requirements.txt
+!sample_texts/*.txt
+
+# Matplotlib cache
+.matplotlib/

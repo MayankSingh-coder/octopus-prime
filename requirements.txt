@@ -1,0 +1,13 @@
+# Required dependencies
+numpy>=1.19.0
+matplotlib>=3.3.0
+scikit-learn>=0.23.0
+Flask>=2.0.0
+Flask-Cors>=3.0.0
+
+# Optional dependencies for enhanced embeddings
+# These can be installed separately if needed
+# gensim>=4.0.0
+# transformers>=4.0.0
+# torch>=1.0.0
+# tokenizers>=0.10.0

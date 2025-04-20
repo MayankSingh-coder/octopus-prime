@@ -1,0 +1,319 @@
+# Check if tkinter is available
+try:
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+    from multi_layer_perceptron_ui import MultiLayerPerceptronUI
+    from multi_layer_perceptron import MultiLayerPerceptron
+    from attention_perceptron import AttentionPerceptron
+    TKINTER_AVAILABLE = True
+except ImportError:
+    TKINTER_AVAILABLE = False
+    # Define a placeholder class for documentation purposes
+    class AttentionPerceptronUI:
+        """
+        This class requires tkinter which is not installed.
+        Please install tkinter to use the UI.
+        """
+        def __init__(self, *args, **kwargs):
+            raise ImportError("Tkinter is not available. Please install it to use the UI.")
+
+# Only define the real class if tkinter is available
+if TKINTER_AVAILABLE:
+    class AttentionPerceptronUI(MultiLayerPerceptronUI):
+        """
+        Extended UI that adds support for the AttentionPerceptron model.
+        """
+        
+        
+        def __init__(self, root):
+            """
+            Initialize the GUI with attention model support.
+            
+            Parameters:
+            -----------
+            root : tk.Tk
+                Root window
+            """
+            # Call the parent class initializer
+            super().__init__(root)
+            
+            # Update the window title
+            self.root.title("Enhanced Language Model with Attention")
+            
+            # Add model type selection to the parameters frame
+            # Find the parameters frame in the training tab
+            params_frame = None
+            for child in self.training_tab.winfo_children():
+                if isinstance(child, ttk.Frame):
+                    for grandchild in child.winfo_children():
+                        if isinstance(grandchild, ttk.LabelFrame) and grandchild.winfo_children():
+                            if "Model Parameters" in grandchild["text"]:
+                                params_frame = grandchild
+                                break
+            
+            if params_frame:
+                # Add model type selection
+                model_type_frame = ttk.Frame(params_frame)
+                model_type_frame.pack(fill=tk.X, pady=5, before=params_frame.winfo_children()[0])
+                
+                ttk.Label(model_type_frame, text="Model Type:").pack(side=tk.LEFT)
+                self.model_type_var = tk.StringVar(value="standard")
+                model_type_rb1 = ttk.Radiobutton(model_type_frame, text="Standard MLP", 
+                                                variable=self.model_type_var, value="standard")
+                model_type_rb1.pack(side=tk.LEFT, padx=(5, 10))
+                
+                model_type_rb2 = ttk.Radiobutton(model_type_frame, text="Attention-Enhanced", 
+                                                variable=self.model_type_var, value="attention")
+                model_type_rb2.pack(side=tk.LEFT)
+                
+                # Add attention-specific parameters
+                attention_frame = ttk.LabelFrame(params_frame, text="Attention Parameters")
+                attention_frame.pack(fill=tk.X, pady=5, after=params_frame.winfo_children()[-1])
+                
+                # Attention dimension
+                att_dim_frame = ttk.Frame(attention_frame)
+                att_dim_frame.pack(fill=tk.X, pady=5)
+                ttk.Label(att_dim_frame, text="Attention Dimension:").pack(side=tk.LEFT)
+                self.attention_dim_var = tk.IntVar(value=40)
+                attention_dim_entry = ttk.Spinbox(att_dim_frame, from_=10, to=100, 
+                                                 textvariable=self.attention_dim_var, width=5)
+                attention_dim_entry.pack(side=tk.LEFT, padx=(5, 0))
+                ttk.Label(att_dim_frame, text="(Dimension of attention space)").pack(side=tk.LEFT, padx=(5, 0))
+                
+                # Number of attention heads
+                heads_frame = ttk.Frame(attention_frame)
+                heads_frame.pack(fill=tk.X, pady=5)
+                ttk.Label(heads_frame, text="Attention Heads:").pack(side=tk.LEFT)
+                self.num_heads_var = tk.IntVar(value=2)
+                num_heads_entry = ttk.Spinbox(heads_frame, from_=1, to=8, 
+                                             textvariable=self.num_heads_var, width=5)
+                num_heads_entry.pack(side=tk.LEFT, padx=(5, 0))
+                ttk.Label(heads_frame, text="(Number of attention heads)").pack(side=tk.LEFT, padx=(5, 0))
+                
+                # Attention dropout
+                dropout_frame = ttk.Frame(attention_frame)
+                dropout_frame.pack(fill=tk.X, pady=5)
+                ttk.Label(dropout_frame, text="Attention Dropout:").pack(side=tk.LEFT)
+                self.attention_dropout_var = tk.DoubleVar(value=0.1)
+                attention_dropout_entry = ttk.Spinbox(dropout_frame, from_=0.0, to=0.5, increment=0.05,
+                                                     textvariable=self.attention_dropout_var, width=5)
+                attention_dropout_entry.pack(side=tk.LEFT, padx=(5, 0))
+                ttk.Label(dropout_frame, text="(Dropout rate for attention weights)").pack(side=tk.LEFT, padx=(5, 0))
+                
+                # Update the model info section to show attention parameters
+                info_frame = None
+                for child in self.training_tab.winfo_children():
+                    if isinstance(child, ttk.Frame):
+                        for grandchild in child.winfo_children():
+                            if isinstance(grandchild, ttk.LabelFrame) and "Model Information" in grandchild["text"]:
+                                info_frame = grandchild
+                                break
+                
+                if info_frame:
+                    # Add model type info
+                    model_type_frame = ttk.Frame(info_frame)
+                    model_type_frame.pack(fill=tk.X, pady=5, before=info_frame.winfo_children()[0])
+                    ttk.Label(model_type_frame, text="Model Type:").pack(side=tk.LEFT)
+                    self.model_type_info_var = tk.StringVar(value="Standard MLP")
+                    ttk.Label(model_type_frame, textvariable=self.model_type_info_var).pack(side=tk.LEFT, padx=(5, 0))
+                    
+                    # Add attention info
+                    attention_info_frame = ttk.Frame(info_frame)
+                    attention_info_frame.pack(fill=tk.X, pady=5, after=info_frame.winfo_children()[-1])
+                    ttk.Label(attention_info_frame, text="Attention Config:").pack(side=tk.LEFT)
+                    self.attention_info_var = tk.StringVar(value="N/A")
+                    ttk.Label(attention_info_frame, textvariable=self.attention_info_var).pack(side=tk.LEFT, padx=(5, 0))
+        
+        def train_model(self):
+            """
+            Train the model on the provided text, using either standard MLP or attention-enhanced model.
+            """
+            # Get training text
+            training_text = self.training_text.get("1.0", tk.END).strip()
+            if not training_text:
+                messagebox.showerror("Error", "Please provide training text.")
+                return
+            
+            # Get common parameters
+            context_size = self.context_size_var.get()
+            learning_rate = self.learning_rate_var.get()
+            n_iterations = self.iterations_var.get()
+            
+            # Parse hidden layers
+            try:
+                hidden_layers = [int(x.strip()) for x in self.hidden_layers_var.get().split(',')]
+            except ValueError:
+                messagebox.showerror("Error", "Invalid hidden layers format. Use comma-separated integers (e.g., 64,32).")
+                return
+            
+            # Get model type
+            model_type = self.model_type_var.get()
+            
+            # Create model based on type
+            if model_type == "attention":
+                # Get attention-specific parameters
+                attention_dim = self.attention_dim_var.get()
+                num_heads = self.num_heads_var.get()
+                attention_dropout = self.attention_dropout_var.get()
+                
+                # Create attention-enhanced model
+                self.model = AttentionPerceptron(
+                    context_size=context_size,
+                    embedding_dim=50,  # Default embedding dimension
+                    hidden_layers=hidden_layers,
+                    attention_dim=attention_dim,
+                    num_attention_heads=num_heads,
+                    attention_dropout=attention_dropout,
+                    learning_rate=learning_rate,
+                    n_iterations=n_iterations,
+                    random_state=42,
+                    tokenizer_type='wordpiece',  # Default to WordPiece tokenizer
+                    vocab_size=10000,            # Default vocabulary size
+                    use_pretrained=True          # Use pretrained embeddings
+                )
+                
+                # Update model type info
+                self.model_type_info_var.set("Attention-Enhanced MLP")
+                self.attention_info_var.set(f"Dim: {attention_dim}, Heads: {num_heads}, Dropout: {attention_dropout}")
+            else:
+                # Create standard model
+                self.model = MultiLayerPerceptron(
+                    context_size=context_size,
+                    hidden_layers=hidden_layers,
+                    learning_rate=learning_rate,
+                    n_iterations=n_iterations,
+                    tokenizer_type='wordpiece',  # Default to WordPiece tokenizer
+                    vocab_size=10000,            # Default vocabulary size
+                    use_pretrained=True          # Use pretrained embeddings
+                )
+                
+                # Update model type info
+                self.model_type_info_var.set("Standard MLP")
+                self.attention_info_var.set("N/A")
+            
+            # Reset progress
+            self.progress_var.set(0)
+            self.progress_label.config(text="Starting training...")
+            
+            # Clear the plot
+            self.ax.clear()
+            self.ax.set_title("Training Progress")
+            self.ax.set_xlabel("Iteration")
+            self.ax.set_ylabel("Loss")
+            self.ax.grid(True)
+            self.canvas.draw()
+            
+            # Reset stop event
+            self.stop_training_event.clear()
+            
+            # Enable/disable buttons
+            self.train_button.config(state=tk.DISABLED)
+            self.stop_button.config(state=tk.NORMAL)
+            self.save_model_button.config(state=tk.DISABLED)
+            self.predict_button.config(state=tk.DISABLED)
+            self.generate_button.config(state=tk.DISABLED)
+            
+            # Update status
+            self.model_status_var.set("Training...")
+            
+            # Start training in a separate thread
+            self.training_thread = tk.threading.Thread(
+                target=self._train_model_thread,
+                args=(training_text,)
+            )
+            self.training_thread.daemon = True
+            self.training_thread.start()
+        
+        def load_model(self):
+            """
+            Load a trained model from a file, detecting whether it's a standard or attention model.
+            """
+            # Get file path
+            filepath = tk.filedialog.askopenfilename(
+                filetypes=[("Pickle files", "*.pkl"), ("All files", "*.*")]
+            )
+            
+            if not filepath:
+                return
+            
+            try:
+                # Try loading as AttentionPerceptron first
+                try:
+                    self.model = AttentionPerceptron.load_model(filepath)
+                    # If successful, update model type info
+                    self.model_type_var.set("attention")
+                    self.model_type_info_var.set("Attention-Enhanced MLP")
+                    
+                    # Update attention parameters if available
+                    if hasattr(self.model, 'attention_dim'):
+                        self.attention_dim_var.set(self.model.attention_dim)
+                    if hasattr(self.model, 'num_attention_heads'):
+                        self.num_heads_var.set(self.model.num_attention_heads)
+                    if hasattr(self.model, 'attention_dropout'):
+                        self.attention_dropout_var.set(self.model.attention_dropout)
+                    
+                    # Update attention info
+                    self.attention_info_var.set(
+                        f"Dim: {self.model.attention_dim}, " +
+                        f"Heads: {self.model.num_attention_heads}, " +
+                        f"Dropout: {self.model.attention_dropout}"
+                    )
+                except Exception as e:
+                    # If failed, try loading as standard MultiLayerPerceptron
+                    self.model = MultiLayerPerceptron.load_model(filepath)
+                    # If successful, update model type info
+                    self.model_type_var.set("standard")
+                    self.model_type_info_var.set("Standard MLP")
+                    self.attention_info_var.set("N/A")
+                
+                # Update status
+                self.status_var.set(f"Model loaded from {filepath}")
+                
+                # Update UI
+                self.context_size_var.set(self.model.context_size)
+                self.hidden_layers_var.set(','.join(str(x) for x in self.model.hidden_layers))
+                self.learning_rate_var.set(self.model.learning_rate)
+                self.iterations_var.set(self.model.n_iterations)
+                
+                # Update model info
+                self.vocab_size_var.set(str(len(self.model.vocabulary)) if self.model.vocabulary else "N/A")
+                
+                # Update architecture info
+                if hasattr(self.model, 'hidden_layers') and self.model.hidden_layers:
+                    arch_str = f"Input({self.model.input_size}) → "
+                    for layer_size in self.model.hidden_layers:
+                        arch_str += f"Hidden({layer_size}) → "
+                    arch_str += f"Output({self.model.output_size})"
+                    self.arch_var.set(arch_str)
+                else:
+                    self.arch_var.set("N/A")
+                
+                # Update model status
+                self.model_status_var.set("Loaded")
+                
+                # Enable buttons
+                self.save_model_button.config(state=tk.NORMAL)
+                self.predict_button.config(state=tk.NORMAL)
+                self.generate_button.config(state=tk.NORMAL)
+                
+                # Update plot if we have data
+                if hasattr(self.model, 'training_loss') and len(self.model.training_loss) > 0:
+                    self.update_training_plot()
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load model: {str(e)}")
+        
+        def on_training_complete(self):
+            """
+            Handle the completion of training.
+            """
+            # Call parent method
+            super().on_training_complete()
+            
+            # Update attention info if using attention model
+            if hasattr(self.model, 'attention_dim'):
+                self.attention_info_var.set(
+                    f"Dim: {self.model.attention_dim}, " +
+                    f"Heads: {self.model.num_attention_heads}, " +
+                    f"Dropout: {self.model.attention_dropout}"
+                )

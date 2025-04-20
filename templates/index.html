@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Head Attention Visualization</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- React and ReactDOM CDN -->
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- D3.js for visualizations -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React Components -->
+    <script type="text/babel" src="/static/js/components/AttentionWeightsVisualization.js"></script>
+    <script type="text/babel" src="/static/js/components/TokenizationView.js"></script>
+    <script type="text/babel" src="/static/js/components/ProbabilityDistribution.js"></script>
+    <script type="text/babel" src="/static/js/components/ModelInfoPanel.js"></script>
+    <script type="text/babel" src="/static/js/components/PredictionSteps.js"></script>
+    <script type="text/babel" src="/static/js/components/MLPLayerVisualization.js"></script>
+    <script type="text/babel" src="/static/js/App.js"></script>
+</body>
+</html>
