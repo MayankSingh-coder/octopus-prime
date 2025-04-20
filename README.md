@@ -868,6 +868,94 @@ vector = embeddings.get_embedding("unprecedented")
 similar_words = embeddings.get_similar_words("computer", top_n=5)
 ```
 
+## Contributing
+
+We welcome contributions to the Single Layer Perceptron project! Here's how you can contribute:
+
+### Getting Started
+
+1. **Fork the Repository**
+   - Click the "Fork" button at the top right of this repository
+
+2. **Clone Your Fork**
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/singleLayerPerceptron.git
+   cd singleLayerPerceptron
+   ```
+
+3. **Set Up Development Environment**
+   ```bash
+   # Create and activate a virtual environment
+   python -m venv env
+   source env/bin/activate  # On Windows: env\Scripts\activate
+   
+   # Install dependencies
+   ./install.sh  # On Windows: install.bat
+   # Or manually: pip install -r requirements.txt
+   ```
+
+### Making Changes
+
+1. **Create a Branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make Your Changes**
+   - Write code that follows the project's style
+   - Add or update tests as necessary
+   - Update documentation to reflect your changes
+
+3. **Run Tests**
+   ```bash
+   python -m unittest discover tests
+   ```
+
+### Submitting Changes
+
+1. **Commit Your Changes**
+   ```bash
+   git add .
+   git commit -m "Add a descriptive commit message"
+   ```
+
+2. **Push to Your Fork**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+3. **Create a Pull Request**
+   - Go to the original repository
+   - Click "New Pull Request"
+   - Select your fork and branch
+   - Provide a clear description of your changes
+
+### Contribution Guidelines
+
+- **Code Style**: Follow PEP 8 guidelines for Python code
+- **Documentation**: Update docstrings and README.md as needed
+- **Tests**: Add tests for new features and ensure all tests pass
+- **Commit Messages**: Write clear, concise commit messages
+- **Pull Requests**: Keep PRs focused on a single feature or bug fix
+
+### Areas for Contribution
+
+- Implementing new perceptron variants
+- Enhancing tokenization algorithms
+- Improving UI applications
+- Optimizing performance
+- Adding new examples or datasets
+- Fixing bugs
+- Improving documentation
+
+### Code of Conduct
+
+- Be respectful and inclusive
+- Provide constructive feedback
+- Focus on the best outcome for the project
+
+We appreciate your interest in improving the Single Layer Perceptron project!
+
 ## Limitations
 
 ### Perceptron Limitations
