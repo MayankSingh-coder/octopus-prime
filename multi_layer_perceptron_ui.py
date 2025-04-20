@@ -442,7 +442,7 @@ class MultiLayerPerceptronUI:
             messagebox.showerror("Error", "Invalid hidden layers format. Use comma-separated integers (e.g., 64,32).")
             return
         
-        # Create model
+        # Create model with improved parameters to prevent overfitting
         self.model = MultiLayerPerceptron(
             context_size=context_size,
             hidden_layers=hidden_layers,
@@ -450,7 +450,8 @@ class MultiLayerPerceptronUI:
             n_iterations=n_iterations,
             tokenizer_type='wordpiece',  # Default to WordPiece tokenizer
             vocab_size=10000,            # Default vocabulary size
-            use_pretrained=True          # Use pretrained embeddings
+            use_pretrained=True,         # Use pretrained embeddings
+            random_state=42              # Set random seed for reproducibility
         )
         
         # Reset progress
@@ -606,8 +607,85 @@ class MultiLayerPerceptronUI:
             return
         
         try:
-            # Load the model
-            self.model = MultiLayerPerceptron.load_model(filepath)
+            # Import required modules here to ensure they're in scope
+            import pickle
+            import numpy as np
+            from sklearn.preprocessing import OneHotEncoder
+            from multi_layer_perceptron import MultiLayerPerceptron
+            from embeddings import WordEmbeddings
+            from custom_tokenizers import BPETokenizer, WordPieceTokenizer
+            
+            # Load the model data directly with error handling
+            try:
+                with open(filepath, 'rb') as f:
+                    model_data = pickle.load(f)
+                
+                # Check if the model data contains the required fields
+                required_fields = ['weights', 'biases']
+                missing_fields = [field for field in required_fields if field not in model_data]
+                if missing_fields:
+                    raise Exception(f"Model file is missing required fields: {', '.join(missing_fields)}")
+            except Exception as e:
+                raise Exception(f"Failed to load model file: {str(e)}. The file may be corrupted or created with an incompatible version.")
+            
+            # Extract parameters with defaults for optional ones
+            context_size = model_data.get('context_size', 2)
+            hidden_layers = model_data.get('hidden_layers', [64, 32])
+            learning_rate = model_data.get('learning_rate', 0.01)
+            n_iterations = model_data.get('n_iterations', 1000)
+            random_state = model_data.get('random_state', 42)
+            embedding_dim = model_data.get('embedding_dim', 50)
+            use_pretrained = model_data.get('use_pretrained', False)
+            tokenizer_type = model_data.get('tokenizer_type', 'wordpiece')
+            vocab_size = model_data.get('vocab_size', 10000)
+            
+            # Create a new instance of MultiLayerPerceptron with all parameters
+            self.model = MultiLayerPerceptron(
+                context_size=context_size,
+                embedding_dim=embedding_dim,
+                hidden_layers=hidden_layers,
+                learning_rate=learning_rate,
+                n_iterations=n_iterations,
+                random_state=random_state,
+                tokenizer_type=tokenizer_type,
+                vocab_size=vocab_size,
+                use_pretrained=use_pretrained
+            )
+            
+            # Restore model attributes
+            self.model.vocabulary = model_data.get('vocabulary', {})
+            self.model.word_to_idx = model_data.get('word_to_idx', {})
+            self.model.idx_to_word = model_data.get('idx_to_word', {})
+            self.model.weights = model_data.get('weights', [])
+            self.model.biases = model_data.get('biases', [])
+            self.model.input_size = model_data.get('input_size', 0)
+            self.model.output_size = model_data.get('output_size', 0)
+            self.model.training_loss = model_data.get('training_loss', [])
+            self.model.validation_loss = model_data.get('validation_loss', [])
+            self.model.iteration_count = model_data.get('iteration_count', [])
+            
+            # Create encoder
+            self.model.encoder = OneHotEncoder(sparse_output=False)
+            self.model.encoder.fit(np.array(range(self.model.output_size)).reshape(-1, 1))
+            
+            # Initialize embeddings
+            self.model.embeddings = WordEmbeddings(
+                embedding_dim=model_data.get('embedding_dim', 50),
+                random_state=self.model.random_state,
+                use_pretrained=model_data.get('use_pretrained', False)
+            )
+            self.model.embeddings.word_to_idx = self.model.word_to_idx
+            self.model.embeddings.idx_to_word = self.model.idx_to_word
+            self.model.embeddings.vocabulary = self.model.vocabulary
+            self.model.embeddings.special_tokens = {'<UNK>': 0, '<PAD>': 1, '<BOS>': 2, '<EOS>': 3}
+            
+            # Initialize tokenizer
+            tokenizer_type = model_data.get('tokenizer_type', 'wordpiece').lower()
+            vocab_size = model_data.get('vocab_size', 10000)
+            if tokenizer_type == 'bpe':
+                self.model.tokenizer = BPETokenizer(vocab_size=vocab_size)
+            else:  # default to wordpiece
+                self.model.tokenizer = WordPieceTokenizer(vocab_size=vocab_size)
             
             # Update status
             self.status_var.set(f"Model loaded from {filepath}")
@@ -645,6 +723,8 @@ class MultiLayerPerceptronUI:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load model: {str(e)}")
+            import traceback
+            traceback.print_exc()
     
     def predict_next_word(self):
         """

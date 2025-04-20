@@ -622,9 +622,9 @@ class MultiLayerPerceptron:
             # Adaptive learning rate
             initial_learning_rate = self.learning_rate
             
-            # Training loop with early stopping
+            # Training loop with early stopping (more aggressive)
             best_val_loss = float('inf')
-            patience = 50  # Number of iterations to wait for improvement
+            patience = 20  # Reduced from 50 - stop earlier if no improvement
             patience_counter = 0
             
             # Clear previous training data
@@ -648,8 +648,8 @@ class MultiLayerPerceptron:
                                         "Training stopped by user")
                     break
                     
-                # Adaptive learning rate - decrease over time
-                current_lr = initial_learning_rate / (1 + iteration / 200)
+                # Adaptive learning rate - decrease more aggressively over time
+                current_lr = initial_learning_rate / (1 + iteration / 100)  # Faster decay
                 
                 # Forward pass
                 activations, pre_activations = self._forward(X_train)
@@ -696,8 +696,8 @@ class MultiLayerPerceptron:
                     dW[l] = np.dot(activations[l].T, delta) / len(X_train)
                     db[l] = np.sum(delta, axis=0) / len(X_train)
                 
-                # Add L2 regularization to prevent overfitting
-                reg_lambda = 0.001
+                # Add stronger L2 regularization to prevent overfitting
+                reg_lambda = 0.01  # Increased from 0.001
                 for i in range(len(self.weights)):
                     dW[i] += reg_lambda * self.weights[i]
                 

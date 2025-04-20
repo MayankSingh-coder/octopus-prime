@@ -75,7 +75,7 @@ def main():
         try:
             from single_layer_perceptron import SingleLayerPerceptron
             from single_layer_perceptron_ui import SingleLayerPerceptronUI
-            single_layer_available = True
+            single_layer_available = False
             logger.info("Single-layer perceptron model support detected")
         except ImportError as e:
             logger.warning(f"Single-layer perceptron model support not available: {e}")
