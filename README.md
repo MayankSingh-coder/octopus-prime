@@ -2,6 +2,72 @@
 
 This project implements a single layer perceptron for binary classification tasks and extends it to language modeling with advanced tokenization techniques. The perceptron is one of the simplest forms of artificial neural networks, consisting of a single neuron with adjustable weights and a bias. The project now includes advanced tokenization algorithms (Byte Pair Encoding and WordPiece) for handling out-of-vocabulary words in language modeling tasks.
 
+## New UI Applications
+
+The project now includes several enhanced UI applications:
+
+1. **Complete MLP UI** (`complete_mlp_ui.py`): The most comprehensive UI with all features:
+   - Training with visualization of training vs validation loss
+   - Next word prediction with probability display
+   - Text generation with temperature control
+   - Model saving and loading
+
+2. **Basic MLP UI** (`basic_mlp_ui.py`): A simpler UI with basic functionality
+   - Training with progress tracking
+   - Model saving and loading
+
+3. **Standard MLP UI** (`run_standard_mlp.py`): A launcher for the standard MLP UI
+
+### Running the New UI Applications
+
+```bash
+# Activate the virtual environment
+source mlp_env/bin/activate
+
+# Run the complete UI with all features
+python complete_mlp_ui.py
+
+# Or run the basic UI
+python basic_mlp_ui.py
+
+# Or run the standard MLP UI
+python run_standard_mlp.py
+```
+
+## UI Screenshots
+
+### Model Training
+
+The training interface shows real-time visualization of training and validation loss:
+
+![Model Training](screenshots/model_training.png)
+
+*Screenshot shows the training process with decreasing loss values, indicating the model is learning effectively.*
+
+### Next Word Prediction
+
+The prediction interface allows you to enter a context and see the most likely next words:
+
+![Next Word Prediction](screenshots/word_prediction.png)
+
+*Screenshot shows prediction results for a sample context, with probabilities for each predicted word.*
+
+### Text Generation
+
+The text generation interface lets you generate coherent text from a starting context:
+
+![Text Generation](screenshots/text_generation.png)
+
+*Screenshot shows generated text continuing from a user-provided context.*
+
+### Model Architecture
+
+The model architecture tab provides visualization of the neural network structure:
+
+![Model Architecture](screenshots/model_architecture.png)
+
+*Screenshot shows the neural network layers and connections.*
+
 ## Project Structure
 
 ```
