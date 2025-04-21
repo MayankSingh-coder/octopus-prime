@@ -878,7 +878,19 @@ class AttentionPerceptron(MultiLayerPerceptron):
             # Get embeddings for context words
             context_embeddings = []
             for word in context:
-                word_idx = self.word_to_idx.get(word, self.embeddings.special_tokens['<UNK>'])
+                # Check if embeddings object exists
+                if self.embeddings is None:
+                    print(f"[AttentionPerceptron.predict_next_word] ERROR: embeddings is None, initializing")
+                    # Initialize embeddings
+                    from embeddings import WordEmbeddings
+                    self.embeddings = WordEmbeddings(embedding_dim=self.embedding_dim, random_state=self.random_state)
+                    # Add special tokens
+                    self.embeddings.special_tokens = {'<PAD>': 0, '<UNK>': 1, '<BOS>': 2, '<EOS>': 3}
+                    # Initialize word_to_idx if needed
+                    if not hasattr(self, 'word_to_idx') or self.word_to_idx is None:
+                        self.word_to_idx = {}
+                
+                word_idx = self.word_to_idx.get(word, self.embeddings.special_tokens.get('<UNK>', 1))
                 print(f"[AttentionPerceptron.predict_next_word] Word '{word}' has index {word_idx}")
                 
                 # Check if embeddings are available
@@ -893,7 +905,8 @@ class AttentionPerceptron(MultiLayerPerceptron):
                 else:
                     # Initialize embeddings dictionary if not available
                     print(f"[AttentionPerceptron.predict_next_word] Embeddings not initialized, creating random embeddings")
-                    self.embeddings.embeddings = {}
+                    if not hasattr(self.embeddings, 'embeddings') or self.embeddings.embeddings is None:
+                        self.embeddings.embeddings = {}
                     embedding = np.random.randn(self.embedding_dim)
                     self.embeddings.embeddings[word_idx] = embedding
                 
@@ -1287,3 +1300,156 @@ class AttentionPerceptron(MultiLayerPerceptron):
             model.attention_layer.b_output = model_data['attention_b_output']
         
         return model
+        
+    def predict_next_n_words(self, context, n=5, temperature=1.0):
+        """
+        Predict the next n words given an initial context.
+        
+        Parameters:
+        -----------
+        context : list of str or str
+            Initial context words
+        n : int
+            Number of words to predict
+        temperature : float
+            Temperature parameter for controlling randomness in sampling
+            Higher values (e.g., 1.5) make the output more random
+            Lower values (e.g., 0.5) make the output more deterministic
+            
+        Returns:
+        --------
+        tuple
+            (predicted_words, prediction_info)
+            predicted_words: list of str - the predicted words
+            prediction_info: dict - detailed information about the prediction process
+        """
+        # Handle string input
+        if isinstance(context, str):
+            context = context.split()
+            
+        # Make a copy of the initial context
+        current_context = context.copy()
+        
+        # Ensure context has the right length
+        if len(current_context) < self.context_size:
+            # Pad with empty strings
+            padding_needed = self.context_size - len(current_context)
+            padding = ["<PAD>"] * padding_needed
+            current_context = padding + current_context
+        elif len(current_context) > self.context_size:
+            # Use the last context_size words
+            current_context = current_context[-self.context_size:]
+            
+        # Store prediction info
+        prediction_info = {
+            "original_context": context,
+            "adjusted_context": current_context,
+            "temperature": temperature,
+            "predictions": []
+        }
+        
+        # Predict n words
+        predicted_words = []
+        for i in range(n):
+            try:
+                # Check if embeddings object exists
+                if self.embeddings is None:
+                    print(f"[AttentionPerceptron.predict_next_n_words] ERROR: embeddings is None, initializing")
+                    # Initialize embeddings
+                    from embeddings import WordEmbeddings
+                    self.embeddings = WordEmbeddings(embedding_dim=self.embedding_dim, random_state=self.random_state)
+                    # Add special tokens
+                    self.embeddings.special_tokens = {'<PAD>': 0, '<UNK>': 1, '<BOS>': 2, '<EOS>': 3}
+                    # Initialize word_to_idx if needed
+                    if not hasattr(self, 'word_to_idx') or self.word_to_idx is None:
+                        self.word_to_idx = {}
+                
+                # Predict next word with temperature
+                next_word, word_info = self._predict_next_word_with_temperature(current_context, temperature)
+                predicted_words.append(next_word)
+                
+                # Store prediction info
+                prediction_info["predictions"].append({
+                    "step": i+1,
+                    "context": current_context.copy(),
+                    "predicted_word": next_word,
+                    "probabilities": word_info.get("probabilities", {}),
+                    "attention_weights": word_info.get("attention_weights", [])
+                })
+                
+                # Update context for next prediction
+                current_context = current_context[1:] + [next_word]
+                
+            except Exception as e:
+                print(f"Error in prediction step {i+1}: {str(e)}")
+                prediction_info["error"] = str(e)
+                prediction_info["error_step"] = i+1
+                break
+                
+        return predicted_words, prediction_info
+        
+    def _predict_next_word_with_temperature(self, context, temperature=1.0):
+        """
+        Predict the next word with temperature sampling.
+        
+        Parameters:
+        -----------
+        context : list of str
+            Context words
+        temperature : float
+            Temperature parameter for controlling randomness
+            
+        Returns:
+        --------
+        tuple
+            (predicted_word, prediction_info)
+        """
+        # Check if embeddings object exists
+        if self.embeddings is None:
+            print(f"[AttentionPerceptron._predict_next_word_with_temperature] ERROR: embeddings is None, initializing")
+            # Initialize embeddings
+            from embeddings import WordEmbeddings
+            self.embeddings = WordEmbeddings(embedding_dim=self.embedding_dim, random_state=self.random_state)
+            # Add special tokens
+            self.embeddings.special_tokens = {'<PAD>': 0, '<UNK>': 1, '<BOS>': 2, '<EOS>': 3}
+            # Initialize word_to_idx if needed
+            if not hasattr(self, 'word_to_idx') or self.word_to_idx is None:
+                self.word_to_idx = {}
+        
+        # Get prediction and info
+        word, info = self.predict_next_word(context)
+        
+        # If temperature is close to 1.0, just return the most likely word
+        if abs(temperature - 1.0) < 0.01:
+            return word, info
+            
+        # Get probabilities
+        if "probabilities" in info and info["probabilities"]:
+            probs = []
+            words = []
+            
+            # Extract words and probabilities
+            for word, prob in info["probabilities"].items():
+                words.append(word)
+                probs.append(prob)
+                
+            # Apply temperature to probabilities
+            probs = np.array(probs)
+            if temperature != 1.0:
+                # Apply temperature scaling
+                probs = np.power(probs, 1.0 / temperature)
+                # Renormalize
+                probs = probs / np.sum(probs)
+                
+            # Sample from the distribution
+            chosen_idx = np.random.choice(len(words), p=probs)
+            chosen_word = words[chosen_idx]
+            
+            # Update info
+            info["temperature"] = temperature
+            info["sampling_method"] = "temperature"
+            
+            return chosen_word, info
+        else:
+            # Fallback to regular prediction
+            return word, info
