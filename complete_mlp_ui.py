@@ -93,6 +93,13 @@ class CompleteMlpUI:
         self.model_status_var = tk.StringVar(value="Not trained")
         ttk.Label(status_frame, textvariable=self.model_status_var).pack(side=tk.LEFT, padx=(5, 0))
         
+        # Model Type
+        model_type_frame = ttk.Frame(self.info_frame)
+        model_type_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(model_type_frame, text="Model Type:").pack(side=tk.LEFT)
+        self.model_type_info_var = tk.StringVar(value="N/A")
+        ttk.Label(model_type_frame, textvariable=self.model_type_info_var).pack(side=tk.LEFT, padx=(5, 0))
+        
         # Vocabulary Size
         vocab_frame = ttk.Frame(self.info_frame)
         vocab_frame.pack(fill=tk.X, pady=5)
@@ -167,6 +174,16 @@ class CompleteMlpUI:
         iterations_entry = ttk.Spinbox(iter_frame, from_=100, to=10000, increment=100, textvariable=self.iterations_var, width=7)
         iterations_entry.pack(side=tk.LEFT, padx=(5, 0))
         ttk.Label(iter_frame, text="(Number of training iterations)").pack(side=tk.LEFT, padx=(5, 0))
+        
+        # Model type selection
+        model_type_frame = ttk.LabelFrame(self.params_frame, text="Model Type")
+        model_type_frame.pack(fill=tk.X, pady=5)
+        
+        self.model_type_var = tk.StringVar(value="attention")
+        ttk.Radiobutton(model_type_frame, text="Attention + MLP", variable=self.model_type_var, 
+                        value="attention").pack(anchor=tk.W, padx=10, pady=2)
+        ttk.Radiobutton(model_type_frame, text="MLP Only", variable=self.model_type_var, 
+                        value="mlp").pack(anchor=tk.W, padx=10, pady=2)
         
         # Training buttons
         buttons_frame = ttk.Frame(left_frame)
@@ -388,6 +405,9 @@ class CompleteMlpUI:
         self.train_loss_var.set("N/A")
         self.val_loss_var.set("N/A")
         
+        # Update model status
+        self.model_status_var.set("Training...")
+        
         # Clear the plot
         self.ax.clear()
         self.ax.set_title('Training and Validation Loss')
@@ -403,17 +423,35 @@ class CompleteMlpUI:
         # Reset stop event
         self.stop_training_event.clear()
         
+        # Get model type
+        model_type = self.model_type_var.get()
+        
         # Start training in a separate thread
         self.training_thread = threading.Thread(
             target=self._train_model_thread,
-            args=(training_text, context_size, hidden_layers, learning_rate, n_iterations)
+            args=(training_text, context_size, hidden_layers, learning_rate, n_iterations, model_type)
         )
         self.training_thread.daemon = True
         self.training_thread.start()
     
-    def _train_model_thread(self, text, context_size, hidden_layers, learning_rate, n_iterations):
+    def _train_model_thread(self, text, context_size, hidden_layers, learning_rate, n_iterations, model_type):
         """
         Thread function for training the model.
+        
+        Parameters:
+        -----------
+        text : str
+            Training text
+        context_size : int
+            Number of context words to use
+        hidden_layers : list
+            List of hidden layer sizes
+        learning_rate : float
+            Learning rate for training
+        n_iterations : int
+            Number of training iterations
+        model_type : str
+            Type of model to create ('mlp' or 'attention')
         """
         try:
             # Import here to avoid circular imports
@@ -422,19 +460,37 @@ class CompleteMlpUI:
             
             # Log start of training
             self.progress_queue.put("Starting model training...")
-            self.progress_queue.put((0, n_iterations, 0, 0, "Creating model..."))
+            self.progress_queue.put((0, n_iterations, 0, 0, f"Creating {model_type.upper()} model..."))
             
-            # Create model
-            self.model = AttentionPerceptron(
-                context_size=context_size,
-                hidden_layers=hidden_layers,
-                learning_rate=learning_rate,
-                n_iterations=n_iterations,
-                tokenizer_type='wordpiece',
-                vocab_size=10000,
-                use_pretrained=True,
-                random_state=42
-            )
+            # Create model based on selected type
+            if model_type == "attention":
+                self.model = AttentionPerceptron(
+                    context_size=context_size,
+                    hidden_layers=hidden_layers,
+                    learning_rate=learning_rate,
+                    n_iterations=n_iterations,
+                    tokenizer_type='wordpiece',
+                    vocab_size=10000,
+                    use_pretrained=True,
+                    random_state=42
+                )
+                self.progress_queue.put((0, n_iterations, 0, 0, "Created Attention+MLP model"))
+                # Update model type info in UI
+                self.root.after(0, lambda: self.model_type_info_var.set("Attention + MLP"))
+            else:  # model_type == "mlp"
+                self.model = MultiLayerPerceptron(
+                    context_size=context_size,
+                    hidden_layers=hidden_layers,
+                    learning_rate=learning_rate,
+                    n_iterations=n_iterations,
+                    tokenizer_type='wordpiece',
+                    vocab_size=10000,
+                    use_pretrained=True,
+                    random_state=42
+                )
+                self.progress_queue.put((0, n_iterations, 0, 0, "Created MLP model"))
+                # Update model type info in UI
+                self.root.after(0, lambda: self.model_type_info_var.set("MLP Only"))
             
             # Create a detailed logging wrapper for the progress callback
             def detailed_progress_callback(iteration, total_iterations, train_loss, val_loss, message=None):
@@ -593,6 +649,21 @@ class CompleteMlpUI:
         # Enable prediction and generation buttons
         self.predict_button.config(state=tk.NORMAL)
         self.generate_button.config(state=tk.NORMAL)
+        
+        # Update model status
+        self.model_status_var.set("Trained")
+        
+        # Update vocabulary size if available
+        if hasattr(self.model, 'vocabulary') and self.model.vocabulary:
+            self.vocab_size_var.set(str(len(self.model.vocabulary)))
+        
+        # Update architecture info if available
+        if hasattr(self.model, 'hidden_layers') and hasattr(self.model, 'input_size') and hasattr(self.model, 'output_size'):
+            arch_str = f"Input({self.model.input_size}) → "
+            for layer_size in self.model.hidden_layers:
+                arch_str += f"Hidden({layer_size}) → "
+            arch_str += f"Output({self.model.output_size})"
+            self.arch_var.set(arch_str)
     
     def stop_training(self):
         """
@@ -644,11 +715,25 @@ class CompleteMlpUI:
             from multi_layer_perceptron import MultiLayerPerceptron
             from attention_perceptron import AttentionPerceptron
             
-            # Load the model
-            self.model = AttentionPerceptron.load_model(filepath)
-            
-            # Update status
-            self.status_var.set(f"Model loaded from {filepath}")
+            # Try to determine model type from the file
+            try:
+                # First try to load as AttentionPerceptron
+                self.model = AttentionPerceptron.load_model(filepath)
+                model_type = "attention"
+                self.model_type_var.set("attention")
+                self.model_type_info_var.set("Attention + MLP")
+                self.status_var.set(f"Attention+MLP model loaded from {filepath}")
+            except Exception as e:
+                # If that fails, try MultiLayerPerceptron
+                try:
+                    self.model = MultiLayerPerceptron.load_model(filepath)
+                    model_type = "mlp"
+                    self.model_type_var.set("mlp")
+                    self.model_type_info_var.set("MLP Only")
+                    self.status_var.set(f"MLP model loaded from {filepath}")
+                except Exception as e2:
+                    # If both fail, raise the original error
+                    raise Exception(f"Failed to load model: {str(e)}\nAlso tried as MLP: {str(e2)}")
             
             # Update UI
             self.context_size_var.set(self.model.context_size)
