@@ -198,7 +198,21 @@ class CompleteMlpUI:
         
         # Progress label
         self.progress_label = ttk.Label(right_frame, text="Not started")
-        self.progress_label.pack(anchor=tk.W, pady=(0, 10))
+        self.progress_label.pack(anchor=tk.W, pady=(0, 5))
+        
+        # Loss values frame
+        loss_frame = ttk.Frame(right_frame)
+        loss_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Training loss label
+        ttk.Label(loss_frame, text="Training Loss:").pack(side=tk.LEFT)
+        self.train_loss_var = tk.StringVar(value="N/A")
+        ttk.Label(loss_frame, textvariable=self.train_loss_var, width=10).pack(side=tk.LEFT, padx=(5, 15))
+        
+        # Validation loss label
+        ttk.Label(loss_frame, text="Validation Loss:").pack(side=tk.LEFT)
+        self.val_loss_var = tk.StringVar(value="N/A")
+        ttk.Label(loss_frame, textvariable=self.val_loss_var, width=10).pack(side=tk.LEFT, padx=(5, 0))
         
         # Training plot
         plot_frame = ttk.LabelFrame(right_frame, text="Training Loss")
@@ -371,6 +385,8 @@ class CompleteMlpUI:
         # Reset progress
         self.progress_var.set(0)
         self.progress_label.config(text="Starting training...")
+        self.train_loss_var.set("N/A")
+        self.val_loss_var.set("N/A")
         
         # Clear the plot
         self.ax.clear()
@@ -402,13 +418,14 @@ class CompleteMlpUI:
         try:
             # Import here to avoid circular imports
             from multi_layer_perceptron import MultiLayerPerceptron
+            from attention_perceptron import AttentionPerceptron
             
             # Log start of training
             self.progress_queue.put("Starting model training...")
             self.progress_queue.put((0, n_iterations, 0, 0, "Creating model..."))
             
             # Create model
-            self.model = MultiLayerPerceptron(
+            self.model = AttentionPerceptron(
                 context_size=context_size,
                 hidden_layers=hidden_layers,
                 learning_rate=learning_rate,
@@ -536,7 +553,11 @@ class CompleteMlpUI:
                     progress = (iteration / total_iterations) * 100
                     self.progress_var.set(progress)
                     
-                    # Update progress label
+                    # Update loss value labels
+                    self.train_loss_var.set(f"{train_loss:.6f}")
+                    self.val_loss_var.set(f"{val_loss:.6f}")
+                    
+                    # Update progress label with message
                     if message_text:
                         self.progress_label.config(text=f"Iteration {iteration}/{total_iterations} - {message_text}")
                     else:
@@ -621,9 +642,10 @@ class CompleteMlpUI:
         try:
             # Import here to avoid circular imports
             from multi_layer_perceptron import MultiLayerPerceptron
+            from attention_perceptron import AttentionPerceptron
             
             # Load the model
-            self.model = MultiLayerPerceptron.load_model(filepath)
+            self.model = AttentionPerceptron.load_model(filepath)
             
             # Update status
             self.status_var.set(f"Model loaded from {filepath}")
