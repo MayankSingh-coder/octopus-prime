@@ -1,0 +1,18 @@
+{
+  "model_type": "multi_layer_perceptron",
+  "context_size": 2,
+  "embedding_dim": 20,
+  "hidden_layers": [
+    32,
+    16
+  ],
+  "learning_rate": 0.01,
+  "n_iterations": 10,
+  "random_state": 42,
+  "tokenizer_type": "wordpiece",
+  "vocab_size": 10000,
+  "use_pretrained": false,
+  "input_size": 40,
+  "output_size": 7,
+  "is_trained": true
+}

@@ -790,7 +790,10 @@ class CompleteMlpUI:
         try:
             # Predict next word and get prediction info
             predicted_word, prediction_info = self.model.predict_next_word(context)
-            
+
+            print(f"Predicted Word: {predicted_word}")
+            print(f"Prediction Info: {prediction_info}")
+
             # Clear previous results
             for item in self.results_tree.get_children():
                 self.results_tree.delete(item)

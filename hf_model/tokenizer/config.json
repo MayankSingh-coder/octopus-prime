@@ -1,0 +1,4 @@
+{
+  "tokenizer_type": "wordpiece",
+  "vocab_size": 10000
+}
